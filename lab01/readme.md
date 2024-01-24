@@ -2,4 +2,4 @@
 
 Link to [Google StyleSheet for Java](https://google.github.io/styleguide/javaguide.html)
 
-Link to [aerosol.java ](src\aerosol.java)
+Link to [aerosol.java ](src/aerosol.java)
