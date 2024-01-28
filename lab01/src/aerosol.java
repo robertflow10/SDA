@@ -1,3 +1,4 @@
+import java.util.Random;
 
 final public  class aerosol {
 
@@ -7,13 +8,13 @@ final public  class aerosol {
 
 
         int i, j;
-        int a;     // user defined (argv[1]) total number of gas molecules in simulation
+        int a;     // user defined (argv[1]) total number of Gas molecules in simulation
         int k1, ts; // for time stepping, including user defined (argv[2]) number of timesteps to integrate
         int rc;      // return code
 
         if       (args.length > 0)
         {         a = Integer.parseInt(args[0]);
-            System.out.println("Number of gas molecules in the simulation: "  + Double.toString(a));
+            System.out.println("Number of Gas molecules in the simulation: "  + Double.toString(a));
         }
         else a = 100;
         if      (args.length > 1)
@@ -34,47 +35,47 @@ final public  class aerosol {
                 = new double[a];
         double[] z
                 = new double[a];
-        //1D array for (vx, vy, vz) velocity
-        double[] vx
+        //1D array for (vX, vY, Vz) velocity
+        double[] vX
                 = new double[a];
-        double[] vy
+        double[] vY
                 = new double[a];
-        double[] vz
+        double[] vZ
                 = new double[a];
 
         double dx, dy, dz, d, F, GRAVCONST=0.001, b=300;
         double ax, ay, az;
 
         // 1D array for each particle's component that will evaporate
-        double[] gas = new double[a];
-        double[] liquid = new double[a];
-        double[] loss_rate = new double[a];
+        double[] Gas = new double[a];
+        double[] Liquid = new double[a];
+        double[] Loss_rate = new double[a];
 
         // save previous values whilst doing global updates
         double[] o1 = new double[a];
         double[] o2 = new double[a];
         double[] o3 = new double[a];
         double[] om = new double[a];
-        double totalmass, E;  // for stats
+        double TotalMass, E;  // for stats
 
         double t1 = System.currentTimeMillis();
 
         // initialise
-        rc = INIT(M, x, y, z, vx, vy, vz, gas, liquid, loss_rate, a);
+        rc = INIT(M, x, y, z, vX, vY, vZ, Gas, Liquid, Loss_rate, a);
         if (rc != 0) {
             System.out.println("Error in INIT");
             System.exit(1);
         }
         else System.out.println("INIT COMPLETE");
 
-        totalmass = 0.0;
+        TotalMass = 0.0;
         for (i=0; i<a; i++)
 
 
-        {M[i] = gas[i]*gm + liquid[i]*lm;
-            totalmass += M[i];        }
+        {M[i] = Gas[i]*gm + Liquid[i]*lm;
+            TotalMass += M[i];        }
 
-        E = calc_system_energy(totalmass, vx, vy, vz, a);
+        E = calc_system_energy(TotalMass, vX, vY, vZ, a);
 
         System.out.printf("Time 0. System energy=%g%n", E);
 
@@ -86,7 +87,7 @@ final public  class aerosol {
 
      For each aerosol particle we will: calc forces due to other
      particles & update change in velocity and thus position; then we
-     condense some of the gas to liquid which changes the mass of the
+     condense some of the Gas to Liquid which changes the mass of the
      particle so we then determine its new velocity via conservation
      of kinetic energy.
 
@@ -135,33 +136,33 @@ final public  class aerosol {
                         ay = (F/M[i]) * dy/d;
                         az = (F/M[i]) * dz/d;
                         // approximate velocities in "unit time"
-                        vx[i] += ax;
-                        vy[i] += ay;
-                        vz[i] += az;
+                        vX[i] += ax;
+                        vY[i] += ay;
+                        vZ[i] += az;
                     }
                 }
                 // calc new position
-                x[i] = o1[i] + vx[i];
-                y[i] = o2[i] + vy[i];
-                z[i] = o3[i] + vz[i];
-                // temp-dependent condensation from gas to liquid
-                gas[i] *= loss_rate[i] * Math.exp(-k*b);
-                liquid[i] = 1.0 - gas[i];
-                M[i] = gas[i]*gm + liquid[i]*lm;
+                x[i] = o1[i] + vX[i];
+                y[i] = o2[i] + vY[i];
+                z[i] = o3[i] + vZ[i];
+                // temp-dependent condensation from Gas to Liquid
+                Gas[i] *= Loss_rate[i] * Math.exp(-k*b);
+                Liquid[i] = 1.0 - Gas[i];
+                M[i] = Gas[i]*gm + Liquid[i]*lm;
                 // conserve energy systems 0.5*m*v*v remains constant
-                double v_squared = vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i];
+                double v_squared = vX[i]* vX[i] + vY[i]*vY[i] + vZ[i]*vZ[i];
                 double factor = Math.sqrt(om[i]*v_squared/M[i])/Math.sqrt(v_squared);
-                vx[i] *= factor;
-                vy[i] *= factor;
-                vz[i] *= factor;
+                vX[i] *= factor;
+                vY[i] *= factor;
+                vZ[i] *= factor;
             } // end of LOOP 2
-            _a(x,y,z, vx,vy,vz, gas, liquid, a);
-            totalmass = 0.0;
+            _a(x,y,z, vX,vY,vZ, Gas, Liquid, a);
+            TotalMass = 0.0;
             for (i=0; i<a; i++) {
-                totalmass += M[i];
+                TotalMass += M[i];
             }
-            E = calc_system_energy(totalmass, vx, vy, vz, a);
-            System.out.printf("At end of timestep %d with temp %f the system energy=%g and total aerosol mass=%g%n", k1, b, E, totalmass);
+            E = calc_system_energy(TotalMass, vX, vY, vZ, a);
+            System.out.printf("At end of timestep %d with temp %f the system energy=%g and total aerosol mass=%g%n", k1, b, E, TotalMass);
             // temperature drops per timestep
             b *= 0.99999;
         } // time steps
@@ -169,7 +170,7 @@ final public  class aerosol {
         System.out.printf("Time to init+solve %d molecules for %d timesteps is %g ms%n", a, ts, System.currentTimeMillis()-t1);
         // output a metric (centre of mass) for checking
         double[]com  = new double[3];
-        calcCentre_Mass(com, x,y,z,M,totalmass,a);
+        calcCentre_Mass(com, x,y,z,M,TotalMass,a);
         System.out.printf("Centre of mass = (%g,%g,%g)%n", com[0], com[1], com[2]);
         System.exit(0);
     } // main
@@ -217,15 +218,20 @@ final public  class aerosol {
         double min_pos = -50.0, mult = +100.0, maxVel = +10.0;
 
         for (i=0; i<a; i++) {
-            x[i] = min_pos + mult*Math.random();
-            y[i] = min_pos + mult*Math.random();
-            z[i] = 0.0 + mult*Math.random();
-            vx[i] = -maxVel + 2.0*maxVel*mult*Math.random();
-            vy[i] = -maxVel + 2.0*maxVel*mult*Math.random();
-            vz[i] = -maxVel + 2.0*maxVel*mult*Math.random();
+
+            //A really terrible random number generator, but one that gives consistent results
+            double nextDouble  = Math.round((double) i *100/ (double) a)/(double)100.0;
+
+
+            x[i] = min_pos + mult*nextDouble;
+            y[i] = min_pos + mult*nextDouble;
+            z[i] = 0.0 + mult*nextDouble;
+            vx[i] = -maxVel + 2.0*maxVel*mult*nextDouble;
+            vy[i] = -maxVel + 2.0*maxVel*mult*nextDouble;
+            vz[i] = -maxVel + 2.0*maxVel*mult*nextDouble;
             // proportion of aerosol that evaporates
-            comp = .5 + Math.random()/2.0;
-            loss_rate[i] = 1.0 - Math.random()/25.0;
+            comp = .5 + nextDouble/2.0;
+            loss_rate[i] = 1.0 - nextDouble/25.0;
             // aerosol is component of gas and (1-comp) of liquid
             gas[i] = comp;
             liquid[i] = (1.0-comp);
